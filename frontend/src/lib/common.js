@@ -5,7 +5,7 @@ function formatBooks(bookArray) {
   return bookArray.map((book) => {
     const newBook = { ...book };
     // eslint-disable-next-line no-underscore-dangle
-    newBook.id = newBook._id;
+    newBook.id = book._id || book.id; // ← Corrigé ici
     return newBook;
   });
 }
@@ -36,9 +36,13 @@ export async function getAuthenticatedUser() {
 
 export async function getBooks() {
   try {
+    const token = localStorage.getItem('token');
     const response = await axios({
       method: 'GET',
       url: `${API_ROUTES.BOOKS}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
     // eslint-disable-next-line array-callback-return
     const books = formatBooks(response.data);
