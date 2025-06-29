@@ -4,6 +4,7 @@ import BookItem from '../../components/Books/BookItem/BookItem';
 import Banner from '../../images/home_banner.jpg';
 import styles from './Home.module.css';
 import { getBooks } from '../../lib/common';
+import BestRatedBooks from '../../components/Books/BestRatedBooks/BestRatedBooks';
 
 function Home() {
   const [books, setBooks] = useState(null);
@@ -35,6 +36,8 @@ function Home() {
         <section className={styles.bookList}>
           {loading ? <h1>Chargement</h1> : displayBooks()}
         </section>
+        {/* Les mieux notés */}
+        <BestRatedBooks />
       </main>
 
     </div>

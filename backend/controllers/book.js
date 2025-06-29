@@ -1,5 +1,6 @@
+const { error } = require('console');
 const Book = require('../models/book');
-
+const fs = require ('fs');
 
 exports.createBook = (req, res, next) => {
   try {
@@ -51,10 +52,23 @@ exports.modifyBook = (req, res, next) => {
 };
 
 
-exports.deleteBook = (req,res,next)=> { 
-    Book.deleteOne({ _id: req.params.id })
-    .then(() => res.status(200).json({ message: 'Objet supprimé !'}))
-    .catch(error => res.status(400).json({ error }));
+exports.deleteBook = (req, res, next) => {
+  Book.findOne({ _id: req.params.id })
+    .then(book => {
+      if (book.userId !== req.auth.userId) {
+        return res.status(401).json({ message: 'Non autorisé' });
+      }
+
+      const filename = book.imageUrl.split('/images/')[1];
+      fs.unlink(`images/${filename}`, () => {
+        Book.deleteOne({ _id: req.params.id })
+          .then(() => res.status(200).json({ message: 'Objet supprimé' }))
+          .catch(error => res.status(500).json({ error }));
+      });
+    })
+    .catch(error => {
+      res.status(500).json({ error });
+    });
 };
 
 exports.getOneBook = (req,res,next) => { 
@@ -67,4 +81,13 @@ exports.getAllBooks = (req, res, next) => {
   Book.find()
     .then(books => res.status(200).json(books))
     .catch(error => res.status(400).json({ error }));
+};
+
+exports.getBestRatedBooks = async (req, res) => {
+  try {
+    const books = await Book.find().sort({ averageRating: -1 }).limit(5); // exemple avec un champ averageRating
+    res.status(200).json(books);
+  } catch (error) {
+    res.status(400).json({ error });
+  }
 };
