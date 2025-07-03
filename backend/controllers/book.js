@@ -29,6 +29,7 @@ exports.createBook = (req, res, next) => {
 
 
 exports.modifyBook = (req, res, next) => {
+  // Prépare le nouvel objet livre en fonction de la présence ou non d'un fichier image
   const bookObject = req.file
     ? {
         ...JSON.parse(req.body.book),
@@ -44,13 +45,21 @@ exports.modifyBook = (req, res, next) => {
         return res.status(401).json({ message: 'Non autorisé' });
       }
 
+      // Si une nouvelle image a été uploadée, on supprime l’ancienne du serveur
+      if (req.file && book.imageUrl) {
+        const filename = book.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`, (err) => {
+          if (err) console.error(err);
+        });
+      }
+
+      // On update seulement les champs reçus (donc on peut juste changer un champ sans toucher au reste)
       Book.updateOne({ _id: req.params.id }, { ...bookObject, _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Objet modifié' }))
+        .then(() => res.status(200).json({ message: 'Objet modifié !' }))
         .catch(error => res.status(400).json({ error }));
     })
     .catch(error => res.status(400).json({ error }));
 };
-
 
 exports.deleteBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
