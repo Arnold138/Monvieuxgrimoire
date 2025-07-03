@@ -36,7 +36,6 @@ function Home() {
         <section className={styles.bookList}>
           {loading ? <h1>Chargement</h1> : displayBooks()}
         </section>
-        {/* Les mieux notés */}
         <BestRatedBooks />
       </main>
 
