@@ -5,7 +5,7 @@ function formatBooks(bookArray) {
   return bookArray.map((book) => {
     const newBook = { ...book };
     // eslint-disable-next-line no-underscore-dangle
-    newBook.id = book._id || book.id; // ← Corrigé ici
+    newBook.id = newBook._id;
     return newBook;
   });
 }
@@ -36,13 +36,9 @@ export async function getAuthenticatedUser() {
 
 export async function getBooks() {
   try {
-    const token = localStorage.getItem('token');
     const response = await axios({
       method: 'GET',
       url: `${API_ROUTES.BOOKS}`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
     // eslint-disable-next-line array-callback-return
     const books = formatBooks(response.data);
@@ -55,13 +51,9 @@ export async function getBooks() {
 
 export async function getBook(id) {
   try {
-    const token = localStorage.getItem('token');
     const response = await axios({
       method: 'GET',
       url: `${API_ROUTES.BOOKS}/${id}`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
     const book = response.data;
     // eslint-disable-next-line no-underscore-dangle
@@ -75,13 +67,9 @@ export async function getBook(id) {
 
 export async function getBestRatedBooks() {
   try {
-    const token = localStorage.getItem('token');
     const response = await axios({
       method: 'GET',
       url: `${API_ROUTES.BEST_RATED}`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
     return formatBooks(response.data);
   } catch (e) {

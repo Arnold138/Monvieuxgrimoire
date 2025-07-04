@@ -16,7 +16,6 @@ function Home() {
     async function getBooksList() {
       const data = await getBooks();
       if (data) {
-        console.log('Livres récupérés :', data); // ← Regarde ici dans la console
         setBooks(data);
         setLoading(false);
       }
