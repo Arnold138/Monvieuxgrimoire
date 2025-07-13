@@ -1,16 +1,24 @@
-const jwt = require ('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const tokenSecret = global.TOKEN_SECRET;
+if (!tokenSecret) {
+  throw new Error('TOKEN_SECRET introuvable en global !');
+}
 
-module.exports = (req,res,next) => { 
+module.exports = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : null;
 
-    try { 
-        const token = req.headers.authorization.split(' ')[1];
-        const decodedToken = jwt.verify(token,'RANDOM_TOKEN_SECRET');
-        const userId = decodedToken.userId;
-        req.auth= { 
-            userId: userId
-        };
-        next();
-    } catch (error) { 
-        res.status(401).json({error});
+    if (!token) {
+      return res.status(401).json({ message: 'Token manquant.' });
     }
+
+    const decoded = jwt.verify(token, tokenSecret);
+    req.auth = { userId: decoded.userId };
+    next();
+  } catch (err) {
+    res.status(401).json({ message: 'Authentification invalide.' });
+  }
 };

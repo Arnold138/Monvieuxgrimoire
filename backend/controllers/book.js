@@ -61,6 +61,8 @@ exports.modifyBook = (req, res, next) => {
     : { ...req.body };
 
   delete bookObject._userId;
+  delete bookObject.ratings;
+  delete bookObject.averageRating;
 
   Book.findOne({ _id: req.params.id })
     .then(book => {
@@ -113,9 +115,45 @@ exports.getAllBooks = (req, res, next) => {
 
 exports.getBestRatedBooks = async (req, res) => {
   try {
-    const books = await Book.find().sort({ averageRating: -1 }).limit(5);
+    const books = await Book.find().sort({ averageRating: -1 }).limit(3);
     res.status(200).json(books);
   } catch (error) {
     res.status(400).json({ error });
+  }
+};
+
+
+/* ─────────────────────── NOTER ─────────────────────── */
+exports.rateBook = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const { rating } = req.body;
+
+    // Vérification de la notation
+    if (rating == null || rating < 0 || rating > 5) {
+      return res.status(400).json({ message: 'La note doit être comprise entre 0 et 5.' });
+    }
+
+    // Récupère le livre
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({ message: 'Livre non trouvé.' });
+    }
+
+    // Ajoute la note et recalcul de la moyenne
+    book.ratings.push(rating);
+    const sum = book.ratings.reduce((total, n) => total + n, 0);
+    book.averageRating = sum / book.ratings.length;
+
+    // Sauvegarde et réponse
+    await book.save();
+    res.status(201).json({
+      averageRating: book.averageRating,
+      ratingsCount:  book.ratings.length
+    });
+
+  } catch (err) {
+    console.error('Erreur rateBook :', err);
+    res.status(500).json({ error: 'Erreur serveur.' });
   }
 };

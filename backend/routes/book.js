@@ -12,6 +12,7 @@ router.post('/',auth,imageUpload, stuffCtrl.createBook);
 router.put('/:id',auth,imageUpload,stuffCtrl.modifyBook);
 router.delete('/:id',auth,stuffCtrl.deleteBook);
 router.get('/:id',stuffCtrl.getOneBook);
+router.post('/:id/rating', auth, stuffCtrl.rateBook);
 
 
 module.exports = router;
