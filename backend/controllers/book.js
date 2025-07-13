@@ -4,11 +4,10 @@ const fs   = require('fs');
 /* ────────────────────────  CRÉER  ──────────────────────── */
 exports.createBook = (req, res, next) => {
   try {
-    /* ───── LOG 1 : ce que reçoit réellement Multer ───── */
+   
     console.log('createBook ▶︎ req.body =', req.body);
     console.log('createBook ▶︎ req.file =', req.file);
 
-    /* 1. Corps totalement absent ⇒ 400 clair */
     if (!req.body) {
       console.log('createBook ▶︎ req.body est undefined');
       return res.status(400).json({ message: 'Corps de requête manquant' });
@@ -16,8 +15,8 @@ exports.createBook = (req, res, next) => {
 
     /* 2. Récupère les données du livre */
     const bookObject = typeof req.body.book === 'string'
-      ? JSON.parse(req.body.book)          // format initial : { book: '{"title":"…"}' }
-      : { ...req.body };                   // format champs à plat
+      ? JSON.parse(req.body.book)          
+      : { ...req.body };                   
 
     delete bookObject._id;
     delete bookObject._userId;
@@ -27,7 +26,7 @@ exports.createBook = (req, res, next) => {
       ? `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
       : '';
 
-    /* ───── LOG 2 : objet final avant sauvegarde ───── */
+
     console.log('createBook ▶︎ bookObject =', bookObject);
 
     /* 4. Sauvegarde en base */
