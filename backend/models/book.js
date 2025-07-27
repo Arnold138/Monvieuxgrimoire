@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 // Schéma pour les notes des livres
 const ratingSchema = mongoose.Schema({
   userId: { type: String, required: true },
-  grade:  { type: Number, required: true, min: 0, max: 5 }
+  rating:  { type: Number, required: true, min: 0, max: 5 }
 });
 
 // Schéma principal du livre

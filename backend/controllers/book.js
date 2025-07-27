@@ -1,10 +1,9 @@
 const Book = require('../models/book');
-const fs   = require('fs');
+const fs = require('fs');
 
 /* ────────────────────────  CRÉER  ──────────────────────── */
 exports.createBook = (req, res, next) => {
   try {
-   
     console.log('createBook ▶︎ req.body =', req.body);
     console.log('createBook ▶︎ req.file =', req.file);
 
@@ -13,23 +12,30 @@ exports.createBook = (req, res, next) => {
       return res.status(400).json({ message: 'Corps de requête manquant' });
     }
 
-    /* 2. Récupère les données du livre */
-    const bookObject = typeof req.body.book === 'string'
-      ? JSON.parse(req.body.book)          
-      : { ...req.body };                   
+    let bookObject = typeof req.body.book === 'string'
+      ? JSON.parse(req.body.book)
+      : { ...req.body };
+
+    // Conversion automatique grade → rating si besoin
+    if (Array.isArray(bookObject.ratings)) {
+      bookObject.ratings = bookObject.ratings.map(r => {
+        if ('grade' in r && !('rating' in r)) {
+          const { grade, ...rest } = r;
+          return { ...rest, rating: grade };
+        }
+        return r;
+      });
+    }
 
     delete bookObject._id;
     delete bookObject._userId;
 
-    /* 3. Construit l’URL image (si fichier) */
     const imageUrl = req.file
       ? `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
       : '';
 
-
     console.log('createBook ▶︎ bookObject =', bookObject);
 
-    /* 4. Sauvegarde en base */
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
@@ -37,18 +43,17 @@ exports.createBook = (req, res, next) => {
     });
 
     book.save()
-        .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
-        .catch(error => {
-          console.error('createBook ▶︎ erreur save :', error);
-          res.status(400).json({ error });
-        });
+      .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
+      .catch(error => {
+        console.error('createBook ▶︎ erreur save :', error);
+        res.status(400).json({ error });
+      });
 
   } catch (error) {
     console.error('createBook ▶︎ erreur parsing :', error);
     res.status(400).json({ error: 'Requête mal formée' });
   }
 };
-
 
 /* ─────────────────────── MODIFIER ─────────────────────── */
 exports.modifyBook = (req, res, next) => {
@@ -121,12 +126,18 @@ exports.getBestRatedBooks = async (req, res) => {
   }
 };
 
-
 /* ─────────────────────── NOTER ─────────────────────── */
 exports.rateBook = async (req, res) => {
   try {
     const bookId = req.params.id;
-    const { rating } = req.body;
+    let { rating, grade } = req.body; // on récupère les deux au cas où
+
+    // Si grade est présent mais pas rating (front envoie "grade" !)
+    if (rating == null && grade != null) {
+      rating = grade;
+    }
+
+    const userId = req.auth.userId;
 
     // Vérification de la notation
     if (rating == null || rating < 0 || rating > 5) {
@@ -139,20 +150,39 @@ exports.rateBook = async (req, res) => {
       return res.status(404).json({ message: 'Livre non trouvé.' });
     }
 
-    // Ajoute la note et recalcul de la moyenne
-    book.ratings.push(rating);
-    const sum = book.ratings.reduce((total, n) => total + n, 0);
-    book.averageRating = sum / book.ratings.length;
+    console.log('▶︎ Tentative de notation');
+    console.log('▶︎ userId JWT =', userId);
+    console.log('▶︎ book.ratings =', book.ratings.map(r => ({
+      userId: r.userId?.toString?.(),
+      rating: r.rating
+    })));
+
+    // Recherche d'une note existante de cet utilisateur
+    const existing = book.ratings.find(r => r.userId?.toString?.() === userId);
+
+    let statusCode;
+
+    if (existing) {
+      // Mise à jour de la note existante
+      existing.rating = rating;
+      statusCode = 200;
+    } else {
+      // Ajout d'une nouvelle note
+      book.ratings.push({ userId, rating });
+      statusCode = 201;
+    }
+
+    // Recalcul de la note moyenne
+    const sum = book.ratings.reduce((total, r) => total + r.rating, 0);
+    book.averageRating = book.ratings.length > 0 ? sum / book.ratings.length : 0;
 
     // Sauvegarde et réponse
     await book.save();
-    res.status(201).json({
-      averageRating: book.averageRating,
-      ratingsCount:  book.ratings.length
-    });
+    return res.status(statusCode).json(book);
+
 
   } catch (err) {
     console.error('Erreur rateBook :', err);
-    res.status(500).json({ error: 'Erreur serveur.' });
+    return res.status(500).json({ error: 'Erreur serveur.' });
   }
 };
