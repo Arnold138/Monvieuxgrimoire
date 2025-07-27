@@ -143,19 +143,11 @@ exports.rateBook = async (req, res) => {
     if (rating == null || rating < 0 || rating > 5) {
       return res.status(400).json({ message: 'La note doit être comprise entre 0 et 5.' });
     }
-
-    // Récupère le livre
+     // Récupère le livre
     const book = await Book.findById(bookId);
     if (!book) {
-      return res.status(404).json({ message: 'Livre non trouvé.' });
+    return res.status(404).json({ message: 'Livre non trouvé.' });
     }
-
-    console.log('▶︎ Tentative de notation');
-    console.log('▶︎ userId JWT =', userId);
-    console.log('▶︎ book.ratings =', book.ratings.map(r => ({
-      userId: r.userId?.toString?.(),
-      rating: r.rating
-    })));
 
     // Recherche d'une note existante de cet utilisateur
     const existing = book.ratings.find(r => r.userId?.toString?.() === userId);
