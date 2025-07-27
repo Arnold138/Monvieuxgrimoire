@@ -4,9 +4,7 @@ const fs = require('fs');
 /* ────────────────────────  CRÉER  ──────────────────────── */
 exports.createBook = (req, res, next) => {
   try {
-    console.log('createBook ▶︎ req.body =', req.body);
-    console.log('createBook ▶︎ req.file =', req.file);
-
+    // Vérification de la présence du corps de la requête
     if (!req.body) {
       console.log('createBook ▶︎ req.body est undefined');
       return res.status(400).json({ message: 'Corps de requête manquant' });
